@@ -1,13 +1,12 @@
-import { getServerSession } from 'next-auth'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canManageProgrammes } from '@/lib/permissions'
 import { getProgrammeById } from '@programmeos/prisma'
 import ProgrammeDetailClient from '@/components/ProgrammeDetailClient'
 
 export default async function ProgrammeDetailPage({ params }: { params: { programmeId: string } }) {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

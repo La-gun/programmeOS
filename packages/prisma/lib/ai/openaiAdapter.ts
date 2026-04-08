@@ -1,4 +1,4 @@
-import type { AiCompletion, AiTextProvider } from './types'
+import type { AiTextProvider } from './types'
 
 type OpenAiMessage = { role: 'system' | 'user' | 'assistant'; content: string }
 

@@ -1,13 +1,12 @@
-import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import PayoutBatchDetailClient from '@/components/PayoutBatchDetailClient'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canManagePayouts } from '@/lib/permissions'
 
 type PageProps = { params: Promise<{ batchId: string }> }
 
 export default async function PayoutBatchPage(props: PageProps) {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

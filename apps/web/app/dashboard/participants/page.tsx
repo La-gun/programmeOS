@@ -1,8 +1,7 @@
-import { getServerSession } from 'next-auth'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getCohortList, getParticipantList } from '@programmeos/prisma'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canManageParticipants } from '@/lib/permissions'
 
 export default async function ParticipantsPage({
@@ -10,7 +9,7 @@ export default async function ParticipantsPage({
 }: {
   searchParams: { q?: string; cohortId?: string }
 }) {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

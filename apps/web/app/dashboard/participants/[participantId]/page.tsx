@@ -1,10 +1,9 @@
-import { getServerSession } from 'next-auth'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { getCohortList, getParticipantById } from '@programmeos/prisma'
 import ParticipantDetailClient from '@/components/ParticipantDetailClient'
 import ParticipantMilestonesClient from '@/components/ParticipantMilestonesClient'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import {
   canAccessParticipantRecord,
   canManageParticipants,
@@ -12,7 +11,7 @@ import {
 } from '@/lib/permissions'
 
 export default async function ParticipantDetailPage({ params }: { params: { participantId: string } }) {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

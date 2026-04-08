@@ -1,13 +1,12 @@
-import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canManageCohorts } from '@/lib/permissions'
 import { getCohortList, getProgrammeList } from '@programmeos/prisma'
 import CohortListClient from '@/components/CohortListClient'
 
 export default async function CohortsPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

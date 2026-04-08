@@ -1,11 +1,10 @@
-import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import PayoutsClient from '@/components/PayoutsClient'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canManagePayouts } from '@/lib/permissions'
 
 export default async function PayoutsPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

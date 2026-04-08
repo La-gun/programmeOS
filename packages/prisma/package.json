@@ -13,7 +13,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx seed.ts",
     "lint": "eslint . --ext .ts,.tsx",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",

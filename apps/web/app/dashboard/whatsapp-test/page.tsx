@@ -1,9 +1,8 @@
-import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { DevicePhoneMobileIcon } from '@heroicons/react/24/outline'
 import { EncodedUrlQr } from '@/components/EncodedUrlQr'
 import { WhatsAppContactQr } from '@/components/WhatsAppContactQr'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { buildAppEntryUrl, getPublicAppOrigin, originLooksLikeLocalhost } from '@/lib/app-public-url'
 import { buildWhatsAppClickToChatUrl } from '@/lib/messaging/whatsapp-click-to-chat'
 import { canManageParticipants } from '@/lib/permissions'
@@ -76,7 +75,7 @@ const steps = [
 ]
 
 export default async function WhatsAppTestPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

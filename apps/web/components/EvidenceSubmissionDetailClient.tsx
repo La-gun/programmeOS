@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import AiSuggestionsPanel from '@/components/AiSuggestionsPanel'
 
 type SubmissionPayload = {
@@ -44,7 +44,7 @@ export default function EvidenceSubmissionDetailClient({ submissionId }: { submi
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setError('')
     const [sRes, rRes] = await Promise.all([
       fetch(`/api/evidence-submissions/${submissionId}`),
@@ -60,11 +60,11 @@ export default function EvidenceSubmissionDetailClient({ submissionId }: { submi
       const pack = (await rRes.json()) as { reviewers: ReviewerOption[] }
       setReviewers(pack.reviewers)
     }
-  }
+  }, [submissionId])
 
   useEffect(() => {
     void load()
-  }, [submissionId])
+  }, [load])
 
   const assign = async () => {
     if (!reviewerId) {

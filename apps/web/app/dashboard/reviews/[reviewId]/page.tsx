@@ -1,12 +1,11 @@
 import { getEvidenceReviewInTenant } from '@programmeos/prisma'
-import { getServerSession } from 'next-auth'
 import { notFound, redirect } from 'next/navigation'
 import ReviewDetailClient from '@/components/ReviewDetailClient'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canManageParticipants, canReviewEvidence } from '@/lib/permissions'
 
 export default async function ReviewDetailPage({ params }: { params: { reviewId: string } }) {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

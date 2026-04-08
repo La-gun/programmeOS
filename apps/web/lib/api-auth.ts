@@ -1,7 +1,6 @@
-import { getServerSession } from 'next-auth'
 import { NextResponse } from 'next/server'
 import type { Session } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import {
   canManageCohorts,
   canManageParticipants,
@@ -23,7 +22,7 @@ function allow(session: Session): AuthSuccess {
 }
 
 export async function requireProgrammeManager(): Promise<AuthFailure | AuthSuccess> {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
@@ -34,7 +33,7 @@ export async function requireProgrammeManager(): Promise<AuthFailure | AuthSucce
 }
 
 export async function requireCohortManager(): Promise<AuthFailure | AuthSuccess> {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
@@ -45,7 +44,7 @@ export async function requireCohortManager(): Promise<AuthFailure | AuthSuccess>
 }
 
 export async function requireParticipantManager(): Promise<AuthFailure | AuthSuccess> {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
@@ -56,7 +55,7 @@ export async function requireParticipantManager(): Promise<AuthFailure | AuthSuc
 }
 
 export async function requireAuditViewer(): Promise<AuthFailure | AuthSuccess> {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
@@ -67,7 +66,7 @@ export async function requireAuditViewer(): Promise<AuthFailure | AuthSuccess> {
 }
 
 export async function requireSession(): Promise<AuthFailure | AuthSuccess> {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
@@ -75,7 +74,7 @@ export async function requireSession(): Promise<AuthFailure | AuthSuccess> {
 }
 
 export async function requirePayoutManager(): Promise<AuthFailure | AuthSuccess> {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
@@ -87,7 +86,7 @@ export async function requirePayoutManager(): Promise<AuthFailure | AuthSuccess>
 
 /** Integrity case queue: same operational roles as evidence review. */
 export async function requireIntegrityQueueAccess(): Promise<AuthFailure | AuthSuccess> {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }

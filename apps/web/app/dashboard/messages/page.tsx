@@ -1,12 +1,11 @@
-import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import { WhatsAppContactQr } from '@/components/WhatsAppContactQr'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { buildWhatsAppClickToChatUrl } from '@/lib/messaging/whatsapp-click-to-chat'
 import { canManageParticipants } from '@/lib/permissions'
 
 export default async function MessagesPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

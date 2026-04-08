@@ -1,10 +1,11 @@
+import { isAuthDisabled } from '@/lib/auth-disabled'
 import { withAuth } from 'next-auth/middleware'
 import { NextResponse } from 'next/server'
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token
-    if (req.nextUrl.pathname === '/login' && token) {
+    if (req.nextUrl.pathname === '/login' && (token || isAuthDisabled())) {
       return NextResponse.redirect(new URL('/dashboard', req.url))
     }
     return NextResponse.next()
@@ -12,6 +13,9 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ req, token }) => {
+        if (isAuthDisabled()) {
+          return true
+        }
         if (req.nextUrl.pathname === '/login') {
           return true
         }

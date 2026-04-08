@@ -1,13 +1,12 @@
-import { getServerSession } from 'next-auth'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { listCohortsForEnrollment, listTenantUsersForEnrollment } from '@programmeos/prisma'
 import ParticipantNewClient from '@/components/ParticipantNewClient'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canManageParticipants } from '@/lib/permissions'
 
 export default async function NewParticipantPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

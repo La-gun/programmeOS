@@ -1,11 +1,10 @@
-import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import IntegrityQueueClient from '@/components/IntegrityQueueClient'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canReviewEvidence } from '@/lib/permissions'
 
 export default async function IntegrityPage() {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

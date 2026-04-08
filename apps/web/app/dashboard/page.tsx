@@ -1,9 +1,8 @@
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { getDashboardSummary } from '@programmeos/prisma'
 
 export default async function Dashboard() {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   const summary = session ? await getDashboardSummary(session.user.tenantId) : { programmeCount: 0, cohortCount: 0, participantCount: 0 }
 
   return (

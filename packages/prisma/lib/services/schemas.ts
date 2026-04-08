@@ -6,12 +6,6 @@ const optionalString = z.preprocess((value) => {
   return typeof value === 'string' ? value.trim() : value
 }, z.string().optional())
 
-const optionalDate = z.preprocess((value) => {
-  if (value === '' || value === null || value === undefined) return undefined
-  if (typeof value === 'string' || value instanceof String) return new Date(value as string)
-  return value
-}, z.date().optional())
-
 const optionalNumber = z.preprocess((value) => {
   if (value === '' || value === null || value === undefined) return undefined
   if (typeof value === 'string') return Number(value)

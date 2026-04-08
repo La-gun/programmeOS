@@ -1,11 +1,10 @@
-import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import EvidenceSubmissionDetailClient from '@/components/EvidenceSubmissionDetailClient'
-import { authOptions } from '@/lib/auth'
+import { getAppSession } from '@/lib/get-app-session'
 import { canReviewEvidence } from '@/lib/permissions'
 
 export default async function EvidenceSubmissionPage({ params }: { params: { submissionId: string } }) {
-  const session = await getServerSession(authOptions)
+  const session = await getAppSession()
   if (!session) {
     redirect('/login')
   }

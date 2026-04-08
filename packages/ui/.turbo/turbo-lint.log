@@ -1,0 +1,4 @@
+
+> @programmeos/ui@0.0.0 lint C:\Users\oluso\OneDrive\Desktop\POO\programmeOS\packages\ui
+> eslint . --ext .ts,.tsx
+
