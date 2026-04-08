@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -8,12 +9,29 @@ type ProgrammeSummary = {
   name: string
 }
 
+type ParticipantRow = {
+  id: string
+  status: string
+  enrolledAt: string
+  user: { id: string; name: string | null; email: string }
+}
+
 type CohortDetail = {
   id: string
   name: string
   startDate: string | null
   endDate: string | null
   programme: ProgrammeSummary
+  participants: ParticipantRow[]
+  _count: { participants: number }
+}
+
+function formatDate(value: string | null) {
+  if (!value) {
+    return '—'
+  }
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString()
 }
 
 export default function CohortDetailClient({ cohort }: { cohort: CohortDetail }) {
@@ -121,6 +139,35 @@ export default function CohortDetailClient({ cohort }: { cohort: CohortDetail })
             </button>
           </div>
         </form>
+      </section>
+
+      <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <h2 className="text-xl font-semibold text-gray-900">Participants</h2>
+        <p className="mt-1 text-sm text-gray-500">{cohort._count.participants} enrolled</p>
+        {cohort.participants.length === 0 ? (
+          <p className="mt-4 text-sm text-gray-500">No participants enrolled in this cohort yet.</p>
+        ) : (
+          <ul className="mt-4 divide-y divide-gray-100">
+            {cohort.participants.map((p) => (
+              <li key={p.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <Link
+                    href={`/dashboard/participants/${p.id}`}
+                    className="font-medium text-indigo-600 hover:text-indigo-500"
+                  >
+                    {p.user.name || p.user.email}
+                  </Link>
+                  <p className="text-sm text-gray-500">{p.user.email}</p>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <span className="capitalize">{p.status}</span>
+                  <span className="mx-2 text-gray-300">·</span>
+                  <span>Joined {formatDate(p.enrolledAt)}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   )

@@ -2,13 +2,17 @@ import { getServerSession } from 'next-auth'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { authOptions } from '@/lib/auth'
+import { canManageProgrammes } from '@/lib/permissions'
 import { getProgrammeById } from '@programmeos/prisma'
 import ProgrammeDetailClient from '@/components/ProgrammeDetailClient'
 
 export default async function ProgrammeDetailPage({ params }: { params: { programmeId: string } }) {
   const session = await getServerSession(authOptions)
   if (!session) {
-    redirect('/auth/signin')
+    redirect('/login')
+  }
+  if (!canManageProgrammes(session.user.role)) {
+    redirect('/dashboard')
   }
 
   const programme = await getProgrammeById(params.programmeId, session.user.tenantId)

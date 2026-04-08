@@ -1,4 +1,5 @@
 import { DefaultSession } from 'next-auth'
+import type { Role } from '@prisma/client'
 
 declare module 'next-auth' {
   interface Session {
@@ -8,9 +9,9 @@ declare module 'next-auth' {
       tenant: {
         id: string
         name: string
-        domain?: string
+        domain?: string | null
       }
-      role: string
+      role: Role
     } & DefaultSession['user']
   }
 
@@ -19,9 +20,9 @@ declare module 'next-auth' {
     tenant: {
       id: string
       name: string
-      domain?: string
+      domain?: string | null
     }
-    role: string
+    role: Role
   }
 }
 
@@ -31,8 +32,8 @@ declare module 'next-auth/jwt' {
     tenant: {
       id: string
       name: string
-      domain?: string
+      domain?: string | null
     }
-    role: string
+    role: Role
   }
 }

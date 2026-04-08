@@ -53,6 +53,16 @@ enum MessageType {
   SYSTEM
 }
 
+enum MessagingChannel {
+  INTERNAL
+  WHATSAPP
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
 enum AuditAction {
   CREATE
   UPDATE
@@ -116,7 +126,8 @@ model Tenant {
   memberships   Membership[]
   programmes    Programme[]
   documents     Document[]
-  conversations Conversation[]
+  conversations              Conversation[]
+  participantChannelAddresses ParticipantChannelAddress[]
   auditEvents   AuditEvent[]
 
   @@map("tenants")
@@ -127,19 +138,23 @@ model User {
   email     String   @unique
   name      String?
   avatar    String?
+  /// Bcrypt hash for credentials sign-in; omit for OAuth-only users
+  passwordHash String?
   tenantId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  memberships     Membership[]
-  participants    Participant[]
-  evidenceReviews EvidenceReview[]
-  messageEvents   MessageEvent[]
-  auditEvents     AuditEvent[]
-  accounts        Account[]
-  sessions        Session[]
+  tenant                       Tenant                   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships                  Membership[]
+  participants                 Participant[]
+  evidenceReviews              EvidenceReview[]
+  messageEvents                MessageEvent[]
+  auditEvents                  AuditEvent[]
+  accounts                     Account[]
+  sessions                     Session[]
+  uploadedDocuments            Document[]
+  participantStatusChangesMade ParticipantStatusEvent[]
 
   @@map("users")
 }
@@ -217,14 +232,34 @@ model Participant {
   status    String   @default("active")
 
   // Relations
-  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cohort            Cohort              @relation(fields: [cohortId], references: [id], onDelete: Cascade)
-  profile           ParticipantProfile?
-  consentRecords    ConsentRecord[]
+  user                  User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cohort                Cohort                   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  profile               ParticipantProfile?
+  consentRecords        ConsentRecord[]
   participantMilestones ParticipantMilestone[]
+  statusEvents          ParticipantStatusEvent[]
+  documents             Document[]
+  conversations         Conversation[]
+  channelAddresses      ParticipantChannelAddress[]
 
   @@unique([userId, cohortId])
   @@map("participants")
+}
+
+model ParticipantStatusEvent {
+  id            String   @id @default(cuid())
+  participantId String
+  fromStatus    String?
+  toStatus      String
+  note          String?
+  changedById   String?
+  createdAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  changedBy   User?       @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([participantId, createdAt])
+  @@map("participant_status_events")
 }
 
 model ParticipantProfile {
@@ -259,19 +294,24 @@ model ConsentRecord {
 }
 
 model Document {
-  id          String   @id @default(cuid())
-  name        String
-  url         String
-  size        Int?
-  mimeType    String?
-  tenantId    String
+  id           String   @id @default(cuid())
+  name         String
+  url          String
+  /// Relative path under the configured upload root (not a public URL alone)
+  storagePath  String?
+  size         Int?
+  mimeType     String?
+  tenantId     String
   uploadedById String?
-  createdAt   DateTime @default(now())
+  participantId String?
+  createdAt    DateTime @default(now())
 
   // Relations
-  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  uploadedBy User?   @relation(fields: [uploadedById], references: [id])
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploadedBy  User?        @relation(fields: [uploadedById], references: [id])
+  participant Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
 
+  @@index([tenantId, participantId])
   @@map("documents")
 }
 
@@ -323,36 +363,78 @@ model EvidenceReview {
   evidenceSubmission EvidenceSubmission @relation(fields: [evidenceSubmissionId], references: [id], onDelete: Cascade)
   reviewer           User               @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
 
+  @@unique([evidenceSubmissionId, reviewerId])
+  @@index([reviewerId, status])
   @@map("evidence_reviews")
 }
 
 model Conversation {
-  id        String   @id @default(cuid())
-  tenantId  String
-  title     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               String           @id @default(cuid())
+  tenantId         String
+  participantId    String?
+  channel          MessagingChannel @default(INTERNAL)
+  externalThreadId String?
+  title            String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   // Relations
-  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  participant   Participant?           @relation(fields: [participantId], references: [id], onDelete: SetNull)
   messageEvents MessageEvent[]
+  sessionState  MessagingSessionState?
 
+  @@unique([tenantId, participantId, channel])
   @@map("conversations")
 }
 
+model ParticipantChannelAddress {
+  id            String           @id @default(cuid())
+  tenantId      String
+  participantId String
+  channel       MessagingChannel
+  /// Normalised channel address (e.g. E.164 for WhatsApp)
+  address       String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, channel, address])
+  @@unique([participantId, channel])
+  @@map("participant_channel_addresses")
+}
+
+model MessagingSessionState {
+  id             String   @id @default(cuid())
+  conversationId String   @unique
+  stateKey       String   @default("idle")
+  data           Json?
+  updatedAt      DateTime @updatedAt
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messaging_session_states")
+}
+
 model MessageEvent {
-  id             String      @id @default(cuid())
-  conversationId String
-  senderId       String
-  type           MessageType @default(TEXT)
-  content        String
-  metadata       Json?       // For file attachments, etc.
-  sentAt         DateTime    @default(now())
+  id                String           @id @default(cuid())
+  conversationId    String
+  senderId          String?
+  direction         MessageDirection @default(INBOUND)
+  /// Provider message id for idempotency / reconciliation (WhatsApp wamid.*)
+  providerMessageId String?
+  type              MessageType      @default(TEXT)
+  content           String
+  metadata          Json?
+  sentAt            DateTime         @default(now())
 
   // Relations
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sender       User?          @relation(fields: [senderId], references: [id], onDelete: SetNull)
 
+  @@unique([conversationId, providerMessageId])
   @@map("message_events")
 }
 

@@ -2,10 +2,12 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import { prisma } from '@programmeos/prisma'
+import type { Role } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET,
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -20,23 +22,32 @@ export const authOptions: NextAuthOptions = {
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-          include: {
-            tenant: true,
-            memberships: true
-          }
+          include: { tenant: true }
         })
 
-        if (!user) {
+        if (!user || !user.passwordHash) {
           return null
         }
 
-        // For demo purposes, we'll use a simple password check
-        // In production, you'd hash passwords properly
-        const isValid = credentials.password === 'password' // Demo password
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
+        )
 
         if (!isValid) {
           return null
         }
+
+        const membership = await prisma.membership.findUnique({
+          where: {
+            userId_tenantId: {
+              userId: user.id,
+              tenantId: user.tenantId
+            }
+          }
+        })
+
+        const role = (membership?.role ?? 'PARTICIPANT') as Role
 
         return {
           id: user.id,
@@ -44,7 +55,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           tenantId: user.tenantId,
           tenant: user.tenant,
-          role: user.memberships[0]?.role || 'PARTICIPANT'
+          role
         }
       }
     })
@@ -65,13 +76,17 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.sub!
         session.user.tenantId = token.tenantId as string
-        session.user.tenant = token.tenant as any
-        session.user.role = token.role as string
+        session.user.tenant = token.tenant as {
+          id: string
+          name: string
+          domain?: string | null
+        }
+        session.user.role = token.role as Role
       }
       return session
     }
   },
   pages: {
-    signIn: '/auth/signin'
+    signIn: '/login'
   }
 }

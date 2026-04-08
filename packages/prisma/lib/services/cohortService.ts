@@ -1,5 +1,5 @@
 import { AuditAction } from '@prisma/client'
-import { prisma } from '@programmeos/prisma'
+import { prisma } from '../client'
 import { createAuditEvent } from './auditService'
 import { cohortCreateSchema, cohortUpdateSchema, idSchema } from './schemas'
 
@@ -18,7 +18,14 @@ export async function getCohortById(cohortId: string, tenantId: string) {
   return prisma.cohort.findFirst({
     where: { id, programme: { tenantId } },
     include: {
-      programme: true
+      programme: true,
+      participants: {
+        orderBy: { enrolledAt: 'desc' },
+        include: {
+          user: { select: { id: true, name: true, email: true } }
+        }
+      },
+      _count: { select: { participants: true } }
     }
   })
 }
@@ -77,6 +84,15 @@ export async function updateCohort(
 
   if (Object.keys(valid).length === 0) {
     throw new Error('No update payload provided.')
+  }
+
+  if (valid.programmeId !== undefined) {
+    const programme = await prisma.programme.findFirst({
+      where: { id: valid.programmeId, tenantId: context.tenantId }
+    })
+    if (!programme) {
+      throw new Error('Programme not found.')
+    }
   }
 
   const existing = await prisma.cohort.findFirst({ where: { id, programme: { tenantId: context.tenantId } } })

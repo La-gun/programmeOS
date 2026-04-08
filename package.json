@@ -12,7 +12,9 @@
     "lint": "turbo lint",
     "test": "turbo test",
     "clean": "turbo clean",
-    "db:seed": "cd packages/prisma && pnpm db:seed"
+    "db:seed": "cd packages/prisma && pnpm db:seed",
+    "redis:up": "docker compose up -d redis",
+    "redis:down": "docker compose down"
   },
   "devDependencies": {
     "turbo": "^2.0.0"

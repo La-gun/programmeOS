@@ -2,12 +2,21 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type Cohort = {
   id: string
   name: string
   startDate: string | null
   endDate: string | null
+}
+
+function formatDate(value: string | null) {
+  if (!value) {
+    return 'No date'
+  }
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString()
 }
 
 type Template = {
@@ -243,13 +252,15 @@ export default function ProgrammeDetailClient({ programme }: { programme: Progra
             formattedCohorts.map((cohort) => (
               <div key={cohort.id} className="rounded-lg border border-gray-200 p-4">
                 <h3 className="font-semibold text-gray-900">{cohort.name}</h3>
-                <p className="text-sm text-gray-500">{cohort.startDate || 'No start date'} – {cohort.endDate || 'No end date'}</p>
-                <a
+                <p className="text-sm text-gray-500">
+                  {formatDate(cohort.startDate)} – {formatDate(cohort.endDate)}
+                </p>
+                <Link
                   href={`/dashboard/cohorts/${cohort.id}`}
                   className="mt-3 inline-flex rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700"
                 >
                   View cohort
-                </a>
+                </Link>
               </div>
             ))
           )}

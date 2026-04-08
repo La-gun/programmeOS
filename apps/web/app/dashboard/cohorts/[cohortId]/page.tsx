@@ -2,13 +2,17 @@ import { getServerSession } from 'next-auth'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { authOptions } from '@/lib/auth'
+import { canManageCohorts } from '@/lib/permissions'
 import { getCohortById } from '@programmeos/prisma'
 import CohortDetailClient from '@/components/CohortDetailClient'
 
 export default async function CohortDetailPage({ params }: { params: { cohortId: string } }) {
   const session = await getServerSession(authOptions)
   if (!session) {
-    redirect('/auth/signin')
+    redirect('/login')
+  }
+  if (!canManageCohorts(session.user.role)) {
+    redirect('/dashboard')
   }
 
   const cohort = await getCohortById(params.cohortId, session.user.tenantId)

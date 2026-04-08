@@ -1,24 +1,25 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { createCohort, getCohortList } from '@programmeos/prisma'
 import { z } from 'zod'
+import { requireCohortManager } from '@/lib/api-auth'
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireCohortManager()
+  if (!auth.ok) {
+    return auth.response
   }
+  const { session } = auth
 
   const cohorts = await getCohortList(session.user.tenantId)
   return NextResponse.json(cohorts)
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireCohortManager()
+  if (!auth.ok) {
+    return auth.response
   }
+  const { session } = auth
 
   try {
     const payload = await request.json()

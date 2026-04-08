@@ -20,7 +20,9 @@
     "@prisma/client": "^5.10.0",
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "@heroicons/react": "^2.0.18"
+    "@heroicons/react": "^2.0.18",
+    "zod": "^3.23.2",
+    "ioredis": "^5.4.1"
   },
   "devDependencies": {
     "@programmeos/config": "workspace:*",

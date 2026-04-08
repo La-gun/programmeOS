@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { deleteCohort, getCohortById, updateCohort } from '@programmeos/prisma'
 import { z } from 'zod'
+import { requireCohortManager } from '@/lib/api-auth'
 
 export async function GET(
   request: Request,
   { params }: { params: { cohortId: string } }
 ) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireCohortManager()
+  if (!auth.ok) {
+    return auth.response
   }
+  const { session } = auth
 
   const cohort = await getCohortById(params.cohortId, session.user.tenantId)
   if (!cohort) {
@@ -25,10 +25,11 @@ export async function PATCH(
   request: Request,
   { params }: { params: { cohortId: string } }
 ) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireCohortManager()
+  if (!auth.ok) {
+    return auth.response
   }
+  const { session } = auth
 
   try {
     const payload = await request.json()
@@ -51,10 +52,11 @@ export async function DELETE(
   request: Request,
   { params }: { params: { cohortId: string } }
 ) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireCohortManager()
+  if (!auth.ok) {
+    return auth.response
   }
+  const { session } = auth
 
   try {
     const cohort = await deleteCohort(params.cohortId, {

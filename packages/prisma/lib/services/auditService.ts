@@ -1,5 +1,5 @@
 import { AuditAction } from '@prisma/client'
-import { prisma } from '@programmeos/prisma'
+import { prisma } from '../client'
 
 export interface AuditEventContext {
   tenantId: string
@@ -24,6 +24,28 @@ export async function createAuditEvent(context: AuditEventContext) {
       details: details ? JSON.parse(JSON.stringify(details)) : null,
       ipAddress: ipAddress ?? null,
       userAgent: userAgent ?? null
+    }
+  })
+}
+
+export interface AuditListFilters {
+  entityType?: string
+  entityId?: string
+  limit?: number
+}
+
+export async function listAuditEvents(tenantId: string, filters?: AuditListFilters) {
+  const limit = Math.min(Math.max(filters?.limit ?? 100, 1), 500)
+  return prisma.auditEvent.findMany({
+    where: {
+      tenantId,
+      ...(filters?.entityType ? { entityType: filters.entityType } : {}),
+      ...(filters?.entityId ? { entityId: filters.entityId } : {})
+    },
+    orderBy: { createdAt: 'desc' },
+    take: limit,
+    include: {
+      user: { select: { id: true, name: true, email: true } }
     }
   })
 }

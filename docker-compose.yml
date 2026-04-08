@@ -1,0 +1,12 @@
+# Local Redis for messaging idempotency (optional — falls back to in-memory when REDIS_URL is unset).
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    command: redis-server --appendonly yes
+    volumes:
+      - programmeos-redis-data:/data
+
+volumes:
+  programmeos-redis-data:

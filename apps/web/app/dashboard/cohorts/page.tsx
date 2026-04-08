@@ -2,13 +2,17 @@ import { getServerSession } from 'next-auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { authOptions } from '@/lib/auth'
+import { canManageCohorts } from '@/lib/permissions'
 import { getCohortList, getProgrammeList } from '@programmeos/prisma'
 import CohortListClient from '@/components/CohortListClient'
 
 export default async function CohortsPage() {
   const session = await getServerSession(authOptions)
   if (!session) {
-    redirect('/auth/signin')
+    redirect('/login')
+  }
+  if (!canManageCohorts(session.user.role)) {
+    redirect('/dashboard')
   }
 
   const [cohorts, programmes] = await Promise.all([
@@ -36,7 +40,13 @@ export default async function CohortsPage() {
         </Link>
       </div>
 
-      <CohortListClient initialCohorts={cohorts} programmeOptions={programmeOptions} />
+      {programmeOptions.length === 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900">
+          Create a programme first, then you can add cohorts under it.
+        </div>
+      ) : (
+        <CohortListClient initialCohorts={cohorts} programmeOptions={programmeOptions} />
+      )}
     </div>
   )
 }

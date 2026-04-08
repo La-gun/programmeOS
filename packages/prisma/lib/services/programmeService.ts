@@ -1,5 +1,5 @@
-import { AuditAction, Prisma } from '@prisma/client'
-import { prisma } from '@programmeos/prisma'
+import { AuditAction } from '@prisma/client'
+import { prisma } from '../client'
 import { createAuditEvent } from './auditService'
 import { idSchema, programmeCreateSchema, programmeUpdateSchema } from './schemas'
 

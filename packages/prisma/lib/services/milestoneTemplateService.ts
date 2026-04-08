@@ -1,5 +1,5 @@
 import { AuditAction } from '@prisma/client'
-import { prisma } from '@programmeos/prisma'
+import { prisma } from '../client'
 import { createAuditEvent } from './auditService'
 import { idSchema, milestoneTemplateCreateSchema, milestoneTemplateUpdateSchema } from './schemas'
 
@@ -67,6 +67,15 @@ export async function updateMilestoneTemplate(
 
   if (Object.keys(valid).length === 0) {
     throw new Error('No update payload provided.')
+  }
+
+  if (valid.programmeId !== undefined) {
+    const programme = await prisma.programme.findFirst({
+      where: { id: valid.programmeId, tenantId: context.tenantId }
+    })
+    if (!programme) {
+      throw new Error('Programme not found.')
+    }
   }
 
   const existing = await prisma.milestoneTemplate.findFirst({

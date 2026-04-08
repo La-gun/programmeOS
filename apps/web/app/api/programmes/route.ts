@@ -1,24 +1,25 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { createProgramme, getProgrammeList } from '@programmeos/prisma'
 import { z } from 'zod'
+import { requireProgrammeManager } from '@/lib/api-auth'
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireProgrammeManager()
+  if (!auth.ok) {
+    return auth.response
   }
+  const { session } = auth
 
   const programmes = await getProgrammeList(session.user.tenantId)
   return NextResponse.json(programmes)
 }
 
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const auth = await requireProgrammeManager()
+  if (!auth.ok) {
+    return auth.response
   }
+  const { session } = auth
 
   try {
     const payload = await request.json()

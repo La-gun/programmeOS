@@ -3,44 +3,42 @@
 import { useSession } from 'next-auth/react'
 import { Bars3Icon } from '@heroicons/react/24/outline'
 
-export function Header() {
+type HeaderProps = {
+  onOpenMobileNav: () => void
+}
+
+export function Header({ onOpenMobileNav }: HeaderProps) {
   const { data: session } = useSession()
+  const tenant = session?.user.tenant
 
   return (
-    <div className="sticky top-0 z-10 flex h-16 flex-shrink-0 bg-white border-b border-gray-200">
+    <header className="sticky top-0 z-20 flex h-16 shrink-0 border-b border-slate-200 bg-white/90 backdrop-blur">
       <button
         type="button"
-        className="border-r border-gray-200 px-4 text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 lg:hidden"
+        className="border-r border-slate-200 px-4 text-slate-600 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500 lg:hidden"
+        onClick={onOpenMobileNav}
+        aria-label="Open sidebar"
       >
-        <span className="sr-only">Open sidebar</span>
-        <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+        <Bars3Icon className="h-6 w-6" aria-hidden />
       </button>
-      <div className="flex flex-1 justify-between px-4">
-        <div className="flex flex-1">
-          <div className="flex w-full md:ml-0">
-            <label htmlFor="search-field" className="sr-only">
-              Search
-            </label>
-            <div className="relative w-full text-gray-400 focus-within:text-gray-600">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center">
-                {/* Search icon would go here */}
-              </div>
-              <input
-                id="search-field"
-                className="block h-full w-full border-0 py-2 pl-8 pr-3 text-gray-900 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-0 focus:border-0 sm:text-sm"
-                placeholder="Search..."
-                type="search"
-                name="search"
-              />
-            </div>
-          </div>
+      <div className="flex min-w-0 flex-1 items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-slate-900">
+            {session?.user.name ?? 'Signed in'}
+          </p>
+          <p className="truncate text-xs text-slate-500">
+            {tenant?.name}
+            {tenant?.domain ? (
+              <span className="text-slate-400"> · {tenant.domain}</span>
+            ) : null}
+          </p>
         </div>
-        <div className="ml-4 flex items-center md:ml-6">
-          <div className="text-sm text-gray-700">
-            Welcome, {session?.user.name}
-          </div>
-        </div>
+        {session?.user.role ? (
+          <span className="hidden shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 sm:inline">
+            {session.user.role}
+          </span>
+        ) : null}
       </div>
-    </div>
+    </header>
   )
 }
