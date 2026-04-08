@@ -7,16 +7,29 @@ import Link from 'next/link'
 type Cohort = {
   id: string
   name: string
-  startDate: string | null
-  endDate: string | null
+  startDate: string | Date | null
+  endDate: string | Date | null
 }
 
-function formatDate(value: string | null) {
-  if (!value) {
+function toDateInputValue(v: string | Date | null | undefined): string {
+  if (v == null) {
+    return ''
+  }
+  if (v instanceof Date) {
+    const y = v.getFullYear()
+    const m = String(v.getMonth() + 1).padStart(2, '0')
+    const day = String(v.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+  return v.length >= 10 ? v.slice(0, 10) : v
+}
+
+function formatDate(value: string | Date | null) {
+  if (value == null) {
     return 'No date'
   }
-  const d = new Date(value)
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString()
+  const d = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString()
 }
 
 type Template = {
@@ -31,8 +44,8 @@ type ProgrammeDetail = {
   id: string
   name: string
   description: string | null
-  startDate: string | null
-  endDate: string | null
+  startDate: string | Date | null
+  endDate: string | Date | null
   cohorts: Cohort[]
   milestoneTemplates: Template[]
 }
@@ -41,8 +54,8 @@ export default function ProgrammeDetailClient({ programme }: { programme: Progra
   const router = useRouter()
   const [name, setName] = useState(programme.name)
   const [description, setDescription] = useState(programme.description ?? '')
-  const [startDate, setStartDate] = useState(programme.startDate ?? '')
-  const [endDate, setEndDate] = useState(programme.endDate ?? '')
+  const [startDate, setStartDate] = useState(() => toDateInputValue(programme.startDate))
+  const [endDate, setEndDate] = useState(() => toDateInputValue(programme.endDate))
   const [templateName, setTemplateName] = useState('')
   const [templateDescription, setTemplateDescription] = useState('')
   const [templateOrder, setTemplateOrder] = useState('1')

@@ -9,7 +9,7 @@ import { requireIntegrityQueueAccess } from '@/lib/api-auth'
 /** Static rule catalog for UI: thresholds + plain-English descriptions. */
 export async function GET() {
   const auth = await requireIntegrityQueueAccess()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
 

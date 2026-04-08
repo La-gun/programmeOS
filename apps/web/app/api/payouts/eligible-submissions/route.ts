@@ -4,7 +4,7 @@ import { requirePayoutManager } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   const auth = await requirePayoutManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

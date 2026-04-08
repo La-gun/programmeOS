@@ -6,7 +6,7 @@ import { canManageParticipants } from '@/lib/permissions'
 
 export async function GET(request: Request) {
   const auth = await requireSession()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const auth = await requireParticipantManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

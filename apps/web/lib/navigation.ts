@@ -6,6 +6,7 @@ import {
   ChatBubbleLeftRightIcon,
   ClipboardDocumentCheckIcon,
   CogIcon,
+  DevicePhoneMobileIcon,
   DocumentIcon,
   HomeIcon,
   ShieldExclamationIcon,
@@ -80,6 +81,12 @@ export const appNavigation: NavItem[] = [
     href: '/dashboard/messages',
     icon: ChatBubbleLeftRightIcon,
     roles: ['ADMIN', 'MANAGER', 'FACILITATOR', 'PARTICIPANT']
+  },
+  {
+    name: 'Mobile QR test',
+    href: '/dashboard/whatsapp-test',
+    icon: DevicePhoneMobileIcon,
+    roles: ['ADMIN', 'MANAGER', 'FACILITATOR']
   },
   {
     name: 'Settings',

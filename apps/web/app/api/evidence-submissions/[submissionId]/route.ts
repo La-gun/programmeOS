@@ -14,21 +14,21 @@ type RouteContext = { params: { submissionId: string } }
 async function assertCanViewSubmission(session: Session, submissionId: string) {
   const submission = await getEvidenceSubmissionById(submissionId, session.user.tenantId)
   if (!submission) {
-    return { error: NextResponse.json({ error: 'Not found' }, { status: 404 }) as const
+    return { error: NextResponse.json({ error: 'Not found' }, { status: 404 }) } as const
   }
   const participantUserId = submission.participantMilestone.participant.userId
   if (
     !canManageParticipants(session.user.role) &&
     !canAccessParticipantRecord(session.user.role, session.user.id, participantUserId)
   ) {
-    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) as const
+    return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) } as const
   }
   return { submission } as const
 }
 
 export async function GET(_request: Request, context: RouteContext) {
   const auth = await requireSession()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth
@@ -43,7 +43,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PATCH(request: Request, context: RouteContext) {
   const auth = await requireSession()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

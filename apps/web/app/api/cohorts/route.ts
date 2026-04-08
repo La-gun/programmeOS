@@ -5,7 +5,7 @@ import { requireCohortManager } from '@/lib/api-auth'
 
 export async function GET() {
   const auth = await requireCohortManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth
@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   const auth = await requireCohortManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

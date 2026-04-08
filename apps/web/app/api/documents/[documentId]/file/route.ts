@@ -13,7 +13,7 @@ type RouteContext = { params: { documentId: string } }
 
 export async function GET(_request: Request, context: RouteContext) {
   const auth = await requireSession()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

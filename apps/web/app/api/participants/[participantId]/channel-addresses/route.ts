@@ -11,7 +11,7 @@ type RouteContext = { params: { participantId: string } }
 
 export async function GET(_request: Request, context: RouteContext) {
   const auth = await requireSession()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth
@@ -26,7 +26,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
 export async function PUT(request: Request, context: RouteContext) {
   const auth = await requireParticipantManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

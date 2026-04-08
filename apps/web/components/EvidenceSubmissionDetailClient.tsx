@@ -117,7 +117,8 @@ export default function EvidenceSubmissionDetailClient({ submissionId }: { submi
         <h1 className="mt-2 text-2xl font-bold text-gray-900">{data.title}</h1>
         <p className="mt-2 text-sm text-gray-600">
           {data.participantMilestone.milestoneTemplate.name} ·{' '}
-          {data.participantMilestone.user.name || data.participantMilestone.user.email}
+          {data.participantMilestone.participant.user.name ||
+            data.participantMilestone.participant.user.email}
         </p>
         <p className="text-sm text-gray-500">
           Status: {data.status.replace(/_/g, ' ')} · Submitted {formatDate(data.submittedAt)}

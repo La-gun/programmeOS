@@ -1,4 +1,4 @@
-import { AuditAction } from '@prisma/client'
+import { AuditAction, type Prisma } from '@prisma/client'
 import { prisma } from '../client'
 import { createAuditEvent } from './auditService'
 import { cohortCreateSchema, cohortUpdateSchema, idSchema } from './schemas'
@@ -49,11 +49,13 @@ export async function createCohort(
     throw new Error('Programme not found.')
   }
 
-  const cohort = await prisma.cohort.create({
-    data: {
-      ...valid
-    }
-  })
+  const data: Prisma.CohortUncheckedCreateInput = {
+    programmeId: valid.programmeId,
+    name: valid.name,
+    startDate: valid.startDate,
+    endDate: valid.endDate
+  }
+  const cohort = await prisma.cohort.create({ data })
 
   await createAuditEvent({
     tenantId: context.tenantId,

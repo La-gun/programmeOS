@@ -12,9 +12,17 @@ type ProgrammeOption = {
 type CohortItem = {
   id: string
   name: string
-  startDate: string | null
-  endDate: string | null
+  startDate: string | Date | null
+  endDate: string | Date | null
   programme: ProgrammeOption
+}
+
+function formatListDate(value: string | Date | null): string {
+  if (value == null) {
+    return ''
+  }
+  const d = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString()
 }
 
 export default function CohortListClient({
@@ -151,7 +159,10 @@ export default function CohortListClient({
                       {cohort.name}
                     </Link>
                     <p className="text-sm text-gray-500">{cohort.programme.name}</p>
-                    <p className="text-sm text-gray-500">{cohort.startDate || 'No start date'} – {cohort.endDate || 'No end date'}</p>
+                    <p className="text-sm text-gray-500">
+                      {formatListDate(cohort.startDate) || 'No start date'} –{' '}
+                      {formatListDate(cohort.endDate) || 'No end date'}
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Link

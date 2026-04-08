@@ -5,7 +5,7 @@ import { requireProgrammeManager } from '@/lib/api-auth'
 
 export async function POST(request: Request) {
   const auth = await requireProgrammeManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

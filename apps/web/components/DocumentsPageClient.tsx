@@ -7,7 +7,7 @@ type DocRow = {
   id: string
   name: string
   url: string
-  createdAt: string
+  createdAt: string | Date
   uploadedBy: { id: string; name: string | null; email: string } | null
   participant: {
     id: string

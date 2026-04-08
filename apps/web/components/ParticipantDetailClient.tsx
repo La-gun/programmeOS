@@ -25,7 +25,7 @@ type ParticipantDetail = {
   id: string
   userId: string
   status: string
-  enrolledAt: string
+  enrolledAt: string | Date
   user: { id: string; name: string | null; email: string }
   cohort: CohortOption
   profile: {
@@ -38,7 +38,7 @@ type ParticipantDetail = {
     id: string
     type: ConsentType
     consented: boolean
-    consentedAt: string | null
+    consentedAt: string | Date | null
     version: string
   }>
   statusEvents: Array<{
@@ -46,14 +46,14 @@ type ParticipantDetail = {
     fromStatus: string | null
     toStatus: string
     note: string | null
-    createdAt: string
+    createdAt: string | Date
     changedBy: { id: string; name: string | null; email: string } | null
   }>
   documents: Array<{
     id: string
     name: string
     url: string
-    createdAt: string
+    createdAt: string | Date
     uploadedBy: { id: string; name: string | null; email: string } | null
   }>
 }
@@ -63,17 +63,17 @@ type AuditRow = {
   action: string
   entityType: string
   entityId: string
-  createdAt: string
+  createdAt: string | Date
   details: unknown
   user: { id: string; name: string | null; email: string } | null
 }
 
-function formatDate(value: string | null) {
-  if (!value) {
+function formatDate(value: string | Date | null) {
+  if (value == null) {
     return '—'
   }
-  const d = new Date(value)
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleString()
+  const d = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleString()
 }
 
 export default function ParticipantDetailClient({

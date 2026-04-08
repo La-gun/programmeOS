@@ -1,26 +1,64 @@
-import { MessagingChannel, processInboundChannelMessage } from '@programmeos/prisma'
+import { MessagingChannel } from '@prisma/client'
+import { processInboundChannelMessage } from '@programmeos/prisma'
 import { NextResponse } from 'next/server'
 import { claimInboundMessageOnce } from '@/lib/messaging/idempotency'
 import { parseWhatsAppCloudInboundMessages } from '@/lib/messaging/parse-whatsapp-cloud'
 import { resolveInboundTenantId } from '@/lib/messaging/tenant-resolve'
+import { verifyMetaWebhookSignature256 } from '@/lib/messaging/verify-meta-webhook-signature'
 
 export const dynamic = 'force-dynamic'
 
-function assertInboundAuthorized(request: Request): NextResponse | null {
-  const secret = process.env.MESSAGING_INBOUND_SECRET?.trim()
-  if (!secret) {
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json(
-        { error: 'Server misconfiguration: MESSAGING_INBOUND_SECRET is required in production' },
-        { status: 500 }
-      )
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/**
+ * Meta sends X-Hub-Signature-256 (HMAC-SHA256 of raw body). Optional dev-only mock bypass.
+ * Without META_APP_SECRET, Bearer auth can be used for manual testing (not for real Meta traffic).
+ */
+function assertInboundAuthorized(
+  request: Request,
+  rawBody: string,
+  parsedBody: unknown
+): NextResponse | null {
+  const isDevMock =
+    process.env.NODE_ENV !== 'production' && isRecord(parsedBody) && parsedBody.mock === true
+
+  if (isDevMock) {
+    const bearerSecret = process.env.MESSAGING_INBOUND_SECRET?.trim()
+    if (bearerSecret && request.headers.get('authorization') !== `Bearer ${bearerSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     return null
   }
-  const auth = request.headers.get('authorization')
-  if (auth !== `Bearer ${secret}`) {
+
+  const appSecret = process.env.META_APP_SECRET?.trim()
+  if (appSecret) {
+    const sig = request.headers.get('x-hub-signature-256')
+    if (verifyMetaWebhookSignature256(rawBody, sig, appSecret)) {
+      return null
+    }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
+
+  const bearerSecret = process.env.MESSAGING_INBOUND_SECRET?.trim()
+  if (bearerSecret) {
+    if (request.headers.get('authorization') !== `Bearer ${bearerSecret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    return null
+  }
+
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json(
+      {
+        error:
+          'Server misconfiguration: set META_APP_SECRET for Meta webhooks (or MESSAGING_INBOUND_SECRET for non-Meta testing only)'
+      },
+      { status: 500 }
+    )
+  }
+
   return null
 }
 
@@ -59,7 +97,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authErr = assertInboundAuthorized(request)
+  const rawBody = await request.text()
+
+  let body: unknown
+  try {
+    body = rawBody ? JSON.parse(rawBody) : null
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
+  }
+
+  const authErr = assertInboundAuthorized(request, rawBody, body)
   if (authErr) {
     return authErr
   }
@@ -71,13 +118,6 @@ export async function POST(request: Request) {
       { error: 'Could not resolve tenant (set MESSAGING_DEFAULT_TENANT_ID or X-Tenant-Id header)' },
       { status: 400 }
     )
-  }
-
-  let body: unknown
-  try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
   const dev = body as DevMockBody

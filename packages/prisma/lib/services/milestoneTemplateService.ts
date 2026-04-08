@@ -1,4 +1,4 @@
-import { AuditAction } from '@prisma/client'
+import { AuditAction, type Prisma } from '@prisma/client'
 import { prisma } from '../client'
 import { createAuditEvent } from './auditService'
 import { idSchema, milestoneTemplateCreateSchema, milestoneTemplateUpdateSchema } from './schemas'
@@ -32,11 +32,14 @@ export async function createMilestoneTemplate(
     throw new Error('Programme not found.')
   }
 
-  const template = await prisma.milestoneTemplate.create({
-    data: {
-      ...valid
-    }
-  })
+  const data: Prisma.MilestoneTemplateUncheckedCreateInput = {
+    programmeId: valid.programmeId,
+    name: valid.name,
+    description: valid.description ?? null,
+    order: valid.order,
+    dueDays: valid.dueDays ?? null
+  }
+  const template = await prisma.milestoneTemplate.create({ data })
 
   await createAuditEvent({
     tenantId: context.tenantId,

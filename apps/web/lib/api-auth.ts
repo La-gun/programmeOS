@@ -14,77 +14,85 @@ import {
 type AuthFailure = { ok: false; response: NextResponse }
 type AuthSuccess = { ok: true; session: Session }
 
+function deny(response: NextResponse): AuthFailure {
+  return { ok: false, response }
+}
+
+function allow(session: Session): AuthSuccess {
+  return { ok: true, session }
+}
+
 export async function requireProgrammeManager(): Promise<AuthFailure | AuthSuccess> {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+    return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   if (!canManageProgrammes(session.user.role)) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    return deny(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
-  return { ok: true, session }
+  return allow(session)
 }
 
 export async function requireCohortManager(): Promise<AuthFailure | AuthSuccess> {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+    return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   if (!canManageCohorts(session.user.role)) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    return deny(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
-  return { ok: true, session }
+  return allow(session)
 }
 
 export async function requireParticipantManager(): Promise<AuthFailure | AuthSuccess> {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+    return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   if (!canManageParticipants(session.user.role)) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    return deny(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
-  return { ok: true, session }
+  return allow(session)
 }
 
 export async function requireAuditViewer(): Promise<AuthFailure | AuthSuccess> {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+    return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   if (!canViewAuditLog(session.user.role)) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    return deny(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
-  return { ok: true, session }
+  return allow(session)
 }
 
 export async function requireSession(): Promise<AuthFailure | AuthSuccess> {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+    return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
-  return { ok: true, session }
+  return allow(session)
 }
 
 export async function requirePayoutManager(): Promise<AuthFailure | AuthSuccess> {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+    return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   if (!canManagePayouts(session.user.role)) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    return deny(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
-  return { ok: true, session }
+  return allow(session)
 }
 
 /** Integrity case queue: same operational roles as evidence review. */
 export async function requireIntegrityQueueAccess(): Promise<AuthFailure | AuthSuccess> {
   const session = await getServerSession(authOptions)
   if (!session) {
-    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+    return deny(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
   }
   if (!canReviewEvidence(session.user.role)) {
-    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    return deny(NextResponse.json({ error: 'Forbidden' }, { status: 403 }))
   }
-  return { ok: true, session }
+  return allow(session)
 }

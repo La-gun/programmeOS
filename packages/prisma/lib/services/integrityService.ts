@@ -6,6 +6,7 @@ import {
   SubmissionStatus,
   type Prisma
 } from '@prisma/client'
+import { prisma } from '../client'
 import { createAuditEvent } from './auditService'
 import {
   SUBMISSION_VELOCITY_THRESHOLD,
@@ -151,7 +152,7 @@ export async function evaluateIntegrityAfterEvidenceSubmit(
           metadata: f.metadata,
           evidenceSubmissionId: submission.id,
           participantId
-        }))
+        })) as Prisma.IntegrityFlagUncheckedCreateWithoutCaseInput[]
       }
     },
     include: { flags: true }

@@ -5,7 +5,7 @@ import { requireIntegrityQueueAccess } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   const auth = await requireIntegrityQueueAccess()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

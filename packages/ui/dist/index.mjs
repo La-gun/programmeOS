@@ -1,7 +1,7 @@
 // lib/index.tsx
-import React from "react";
+import { jsx } from "react/jsx-runtime";
 var Button = () => {
-  return /* @__PURE__ */ React.createElement("button", null, "Button");
+  return /* @__PURE__ */ jsx("button", { children: "Button" });
 };
 export {
   Button

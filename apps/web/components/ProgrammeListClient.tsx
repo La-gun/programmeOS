@@ -13,8 +13,8 @@ type ProgrammeWithCounts = {
   id: string
   name: string
   description: string | null
-  startDate: string | null
-  endDate: string | null
+  startDate: string | Date | null
+  endDate: string | Date | null
   _count: ProgrammeCount
 }
 

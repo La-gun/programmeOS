@@ -6,7 +6,7 @@ type RouteContext = { params: Promise<{ batchId: string }> }
 
 export async function POST(request: Request, context: RouteContext) {
   const auth = await requirePayoutManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

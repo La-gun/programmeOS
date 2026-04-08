@@ -7,7 +7,7 @@ type RouteContext = { params: { submissionId: string } }
 
 export async function POST(_request: Request, context: RouteContext) {
   const auth = await requireSession()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

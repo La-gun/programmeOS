@@ -1,4 +1,4 @@
-import { AuditAction } from '@prisma/client'
+import { AuditAction, type Prisma } from '@prisma/client'
 import { prisma } from '../client'
 import { createAuditEvent } from './auditService'
 import { idSchema, programmeCreateSchema, programmeUpdateSchema } from './schemas'
@@ -57,12 +57,14 @@ export async function createProgramme(
   }
 ) {
   const valid = programmeCreateSchema.parse(input)
-  const programme = await prisma.programme.create({
-    data: {
-      ...valid,
-      tenantId: context.tenantId
-    }
-  })
+  const data: Prisma.ProgrammeUncheckedCreateInput = {
+    tenantId: context.tenantId,
+    name: valid.name,
+    description: valid.description ?? null,
+    startDate: valid.startDate,
+    endDate: valid.endDate
+  }
+  const programme = await prisma.programme.create({ data })
 
   await createAuditEvent({
     tenantId: context.tenantId,

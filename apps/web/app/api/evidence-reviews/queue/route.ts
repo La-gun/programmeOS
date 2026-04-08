@@ -5,7 +5,7 @@ import { canReviewEvidence } from '@/lib/permissions'
 
 export async function GET() {
   const auth = await requireSession()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

@@ -3,11 +3,8 @@ import { z } from 'zod'
 import { getAiTextProvider } from '../ai/provider'
 import { prisma } from '../client'
 import { getCohortById } from './cohortService'
-import {
-  getEvidenceReviewInTenant,
-  getEvidenceSubmissionById,
-  listDocumentsByIds
-} from './evidenceService'
+import { listDocumentsByIds } from './documentService'
+import { getEvidenceReviewInTenant, getEvidenceSubmissionById } from './evidenceService'
 import { getParticipantById } from './participantService'
 import { idSchema } from './schemas'
 

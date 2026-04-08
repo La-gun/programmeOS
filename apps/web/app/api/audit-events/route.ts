@@ -4,7 +4,7 @@ import { requireAuditViewer } from '@/lib/api-auth'
 
 export async function GET(request: Request) {
   const auth = await requireAuditViewer()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

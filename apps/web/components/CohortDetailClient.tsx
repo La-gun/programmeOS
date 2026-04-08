@@ -13,33 +13,46 @@ type ProgrammeSummary = {
 type ParticipantRow = {
   id: string
   status: string
-  enrolledAt: string
+  enrolledAt: string | Date
   user: { id: string; name: string | null; email: string }
 }
 
 type CohortDetail = {
   id: string
   name: string
-  startDate: string | null
-  endDate: string | null
+  startDate: string | Date | null
+  endDate: string | Date | null
   programme: ProgrammeSummary
   participants: ParticipantRow[]
   _count: { participants: number }
 }
 
-function formatDate(value: string | null) {
-  if (!value) {
+function toDateInputValue(v: string | Date | null | undefined): string {
+  if (v == null) {
+    return ''
+  }
+  if (v instanceof Date) {
+    const y = v.getFullYear()
+    const m = String(v.getMonth() + 1).padStart(2, '0')
+    const day = String(v.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+  return v.length >= 10 ? v.slice(0, 10) : v
+}
+
+function formatDate(value: string | Date | null) {
+  if (value == null) {
     return '—'
   }
-  const d = new Date(value)
-  return Number.isNaN(d.getTime()) ? value : d.toLocaleDateString()
+  const d = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString()
 }
 
 export default function CohortDetailClient({ cohort }: { cohort: CohortDetail }) {
   const router = useRouter()
   const [name, setName] = useState(cohort.name)
-  const [startDate, setStartDate] = useState(cohort.startDate ?? '')
-  const [endDate, setEndDate] = useState(cohort.endDate ?? '')
+  const [startDate, setStartDate] = useState(() => toDateInputValue(cohort.startDate))
+  const [endDate, setEndDate] = useState(() => toDateInputValue(cohort.endDate))
   const [error, setError] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 

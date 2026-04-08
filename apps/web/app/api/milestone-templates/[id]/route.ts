@@ -8,7 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const auth = await requireProgrammeManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth
@@ -26,7 +26,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const auth = await requireProgrammeManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth
@@ -53,7 +53,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const auth = await requireProgrammeManager()
-  if (!auth.ok) {
+  if (auth.ok === false) {
     return auth.response
   }
   const { session } = auth

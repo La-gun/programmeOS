@@ -1,8 +1,5 @@
-import {
-  MessagingChannel,
-  persistOutboundChannelMessage,
-  getParticipantChannelAddress
-} from '@programmeos/prisma'
+import type { MessagingChannel } from '@prisma/client'
+import { persistOutboundChannelMessage, getParticipantChannelAddress } from '@programmeos/prisma'
 import { getProviderForChannel } from './provider-factory'
 
 export type SendOutboundToParticipantInput = {

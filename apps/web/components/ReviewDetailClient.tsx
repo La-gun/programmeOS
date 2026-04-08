@@ -133,8 +133,8 @@ export default function ReviewDetailClient({
         <h1 className="mt-2 text-2xl font-bold text-gray-900">{data.evidenceSubmission.title}</h1>
         <p className="mt-2 text-sm text-gray-600">
           {data.evidenceSubmission.participantMilestone.milestoneTemplate.name} ·{' '}
-          {data.evidenceSubmission.participantMilestone.user.name ||
-            data.evidenceSubmission.participantMilestone.user.email}
+          {data.evidenceSubmission.participantMilestone.participant.user.name ||
+            data.evidenceSubmission.participantMilestone.participant.user.email}
         </p>
         <p className="text-sm text-gray-500">
           Submission status: {data.evidenceSubmission.status.replace(/_/g, ' ')} · Submitted{' '}
