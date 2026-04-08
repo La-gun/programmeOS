@@ -6,6 +6,8 @@ import {
   canManageCohorts,
   canManageParticipants,
   canManageProgrammes,
+  canManagePayouts,
+  canReviewEvidence,
   canViewAuditLog
 } from '@/lib/permissions'
 
@@ -60,6 +62,29 @@ export async function requireSession(): Promise<AuthFailure | AuthSuccess> {
   const session = await getServerSession(authOptions)
   if (!session) {
     return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  return { ok: true, session }
+}
+
+export async function requirePayoutManager(): Promise<AuthFailure | AuthSuccess> {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  if (!canManagePayouts(session.user.role)) {
+    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+  }
+  return { ok: true, session }
+}
+
+/** Integrity case queue: same operational roles as evidence review. */
+export async function requireIntegrityQueueAccess(): Promise<AuthFailure | AuthSuccess> {
+  const session = await getServerSession(authOptions)
+  if (!session) {
+    return { ok: false, response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
+  }
+  if (!canReviewEvidence(session.user.role)) {
+    return { ok: false, response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
   }
   return { ok: true, session }
 }

@@ -71,6 +71,46 @@ enum AuditAction {
   LOGOUT
   SUBMIT_EVIDENCE
   REVIEW_EVIDENCE
+  INTEGRITY_FLAG_RAISED
+  INTEGRITY_CASE_OPENED
+  INTEGRITY_CASE_RESOLVED
+  INTEGRITY_CASE_DISMISSED
+}
+
+/// Declarative integrity rule identifiers (evaluated in application code).
+enum IntegrityRuleCode {
+  DUPLICATE_PHONE
+  SUBMISSION_VELOCITY
+}
+
+enum IntegrityCaseStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
+enum PayoutBatchStatus {
+  DRAFT
+  SUBMITTED
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum PayoutItemStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+/// Persisted AI assistant outputs (suggestions only; never authoritative).
+enum AiSuggestionKind {
+  EVIDENCE_SUMMARY
+  REVIEWER_SUMMARY_DRAFT
+  COHORT_SUMMARY
+  PARTICIPANT_REPLY_DRAFT
 }
 
 // NextAuth.js models
@@ -129,6 +169,10 @@ model Tenant {
   conversations              Conversation[]
   participantChannelAddresses ParticipantChannelAddress[]
   auditEvents   AuditEvent[]
+  payoutBatches PayoutBatch[]
+  integrityCases IntegrityCase[]
+  integrityFlags IntegrityFlag[]
+  aiSuggestions AiSuggestion[]
 
   @@map("tenants")
 }
@@ -155,6 +199,9 @@ model User {
   sessions                     Session[]
   uploadedDocuments            Document[]
   participantStatusChangesMade ParticipantStatusEvent[]
+  payoutBatchesCreated         PayoutBatch[]            @relation("PayoutBatchCreatedBy")
+  integrityCasesResolved       IntegrityCase[]          @relation("IntegrityCaseResolvedBy")
+  aiSuggestionsCreated         AiSuggestion[]         @relation("AiSuggestionCreatedBy")
 
   @@map("users")
 }
@@ -203,6 +250,7 @@ model Cohort {
   // Relations
   programme   Programme     @relation(fields: [programmeId], references: [id], onDelete: Cascade)
   participants Participant[]
+  aiSuggestions AiSuggestion[]
 
   @@map("cohorts")
 }
@@ -241,6 +289,9 @@ model Participant {
   documents             Document[]
   conversations         Conversation[]
   channelAddresses      ParticipantChannelAddress[]
+  integrityCasesPrimary IntegrityCase[]             @relation("IntegrityCasePrimary")
+  integrityFlags        IntegrityFlag[]
+  aiSuggestions         AiSuggestion[]
 
   @@unique([userId, cohortId])
   @@map("participants")
@@ -346,6 +397,10 @@ model EvidenceSubmission {
   // Relations
   participantMilestone ParticipantMilestone @relation(fields: [participantMilestoneId], references: [id], onDelete: Cascade)
   reviews              EvidenceReview[]
+  payoutItems          PayoutItem[]
+  integrityTriggerCase IntegrityCase?
+  integrityFlags       IntegrityFlag[]
+  aiSuggestions        AiSuggestion[]
 
   @@map("evidence_submissions")
 }
@@ -362,6 +417,7 @@ model EvidenceReview {
   // Relations
   evidenceSubmission EvidenceSubmission @relation(fields: [evidenceSubmissionId], references: [id], onDelete: Cascade)
   reviewer           User               @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  aiSuggestions      AiSuggestion[]
 
   @@unique([evidenceSubmissionId, reviewerId])
   @@index([reviewerId, status])
@@ -455,4 +511,128 @@ model AuditEvent {
   user   User?  @relation(fields: [userId], references: [id])
 
   @@map("audit_events")
+}
+
+model PayoutBatch {
+  id               String            @id @default(cuid())
+  tenantId         String
+  name             String?
+  status           PayoutBatchStatus @default(DRAFT)
+  /// Opaque reference from the payment provider (never store card or bank details here)
+  providerBatchRef String?
+  failureReason    String?
+  createdById      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy User?        @relation("PayoutBatchCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  items     PayoutItem[]
+
+  @@index([tenantId, status])
+  @@map("payout_batches")
+}
+
+model PayoutItem {
+  id                   String           @id @default(cuid())
+  batchId              String
+  evidenceSubmissionId String
+  /// Amount in minor units (e.g. cents); optional until stipend rules are configured
+  amountMinor          Int?
+  currency             String           @default("USD")
+  status               PayoutItemStatus @default(PENDING)
+  providerItemRef      String?
+  failureReason        String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  batch              PayoutBatch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  evidenceSubmission EvidenceSubmission @relation(fields: [evidenceSubmissionId], references: [id], onDelete: Cascade)
+
+  @@unique([batchId, evidenceSubmissionId])
+  @@index([evidenceSubmissionId])
+  @@map("payout_items")
+}
+
+model IntegrityCase {
+  id                          String              @id @default(cuid())
+  tenantId                    String
+  status                      IntegrityCaseStatus @default(OPEN)
+  /// Submission that triggered this case (one open case per submission when rules fire).
+  triggerEvidenceSubmissionId String?             @unique
+  primaryParticipantId        String
+  createdAt                   DateTime            @default(now())
+  updatedAt                   DateTime            @updatedAt
+  resolvedAt                  DateTime?
+  resolvedById                String?
+  resolutionNote              String?
+
+  tenant                    Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  triggerEvidenceSubmission EvidenceSubmission?  @relation(fields: [triggerEvidenceSubmissionId], references: [id], onDelete: SetNull)
+  primaryParticipant        Participant          @relation("IntegrityCasePrimary", fields: [primaryParticipantId], references: [id], onDelete: Cascade)
+  resolvedBy                User?                @relation("IntegrityCaseResolvedBy", fields: [resolvedById], references: [id], onDelete: SetNull)
+  flags                     IntegrityFlag[]
+
+  @@index([tenantId, status])
+  @@map("integrity_cases")
+}
+
+model IntegrityFlag {
+  id                   String            @id @default(cuid())
+  tenantId             String
+  caseId               String
+  ruleCode             IntegrityRuleCode
+  /// Short label for queues and tables.
+  summary              String
+  /// Fixed, human-readable explanation of what was detected (rules-based, auditable).
+  explanation          String
+  /// Structured facts used to produce the explanation (counts, ids, thresholds).
+  metadata             Json?
+  evidenceSubmissionId String
+  participantId        String
+  createdAt            DateTime          @default(now())
+
+  tenant             Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  case               IntegrityCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  evidenceSubmission EvidenceSubmission @relation(fields: [evidenceSubmissionId], references: [id], onDelete: Cascade)
+  participant        Participant        @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, ruleCode])
+  @@index([caseId])
+  @@index([evidenceSubmissionId])
+  @@map("integrity_flags")
+}
+
+model AiSuggestion {
+  id                   String           @id @default(cuid())
+  tenantId             String
+  createdByUserId      String
+  kind                 AiSuggestionKind
+  /// Primary human-readable suggestion text (never treated as a decision).
+  outputText           String           @db.Text
+  outputStructured     Json?
+  confidenceScore      Float?
+  confidenceLabel      String?
+  confidenceRationale  String?
+  provider             String
+  model                String?
+  evidenceSubmissionId String?
+  evidenceReviewId     String?
+  cohortId             String?
+  participantId        String?
+  createdAt            DateTime         @default(now())
+
+  tenant               Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy            User               @relation("AiSuggestionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  evidenceSubmission   EvidenceSubmission? @relation(fields: [evidenceSubmissionId], references: [id], onDelete: SetNull)
+  evidenceReview       EvidenceReview?       @relation(fields: [evidenceReviewId], references: [id], onDelete: SetNull)
+  cohort               Cohort?             @relation(fields: [cohortId], references: [id], onDelete: SetNull)
+  participant          Participant?        @relation(fields: [participantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, evidenceSubmissionId])
+  @@index([tenantId, evidenceReviewId])
+  @@index([tenantId, cohortId])
+  @@index([tenantId, participantId])
+  @@index([tenantId, createdAt])
+  @@map("ai_suggestions")
 }

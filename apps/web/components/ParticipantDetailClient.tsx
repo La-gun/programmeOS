@@ -4,6 +4,7 @@ import type { ConsentType } from '@prisma/client'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
+import AiSuggestionsPanel from '@/components/AiSuggestionsPanel'
 
 const CONSENT_TYPES: ConsentType[] = ['TERMS_OF_SERVICE', 'DATA_PROCESSING', 'MARKETING', 'RESEARCH']
 
@@ -79,12 +80,14 @@ export default function ParticipantDetailClient({
   participant: initial,
   cohortOptions,
   isManager,
-  canViewAudit
+  canViewAudit,
+  allowAiAssist
 }: {
   participant: ParticipantDetail
   cohortOptions: CohortOption[]
   isManager: boolean
   canViewAudit: boolean
+  allowAiAssist: boolean
 }) {
   const router = useRouter()
   const [participant, setParticipant] = useState(initial)
@@ -276,6 +279,10 @@ export default function ParticipantDetailClient({
       {error && (
         <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>
       )}
+
+      {allowAiAssist ? (
+        <AiSuggestionsPanel scope={{ mode: 'participant', participantId: participant.id }} />
+      ) : null}
 
       <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">

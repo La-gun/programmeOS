@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import AiSuggestionsPanel from '@/components/AiSuggestionsPanel'
 
 type ProgrammeSummary = {
   id: string
@@ -169,6 +170,8 @@ export default function CohortDetailClient({ cohort }: { cohort: CohortDetail })
           </ul>
         )}
       </section>
+
+      <AiSuggestionsPanel scope={{ mode: 'cohort', cohortId: cohort.id }} />
     </div>
   )
 }

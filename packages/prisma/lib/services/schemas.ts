@@ -157,3 +157,27 @@ export const participantMilestoneUpdateSchema = z.object({
     return value
   }, z.date().optional())
 })
+
+const currencyCode = z
+  .string()
+  .trim()
+  .regex(/^[A-Za-z]{3}$/, 'Use a 3-letter ISO currency code')
+  .transform((c) => c.toUpperCase())
+
+export const payoutBatchCreateSchema = z.object({
+  name: optionalString,
+  items: z
+    .array(
+      z.object({
+        evidenceSubmissionId: idSchema,
+        amountMinor: z.number().int().min(0).optional(),
+        currency: currencyCode.optional()
+      })
+    )
+    .min(1)
+})
+
+export const integrityCaseUpdateSchema = z.object({
+  status: z.enum(['RESOLVED', 'DISMISSED']),
+  resolutionNote: z.string().max(4000).optional()
+})

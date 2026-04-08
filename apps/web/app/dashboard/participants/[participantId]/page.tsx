@@ -59,6 +59,7 @@ export default async function ParticipantDetailPage({ params }: { params: { part
         cohortOptions={cohortOptions}
         isManager={isManager}
         canViewAudit={canViewAuditLog(session.user.role)}
+        allowAiAssist={isManager || session.user.id === participant.userId}
       />
 
       <ParticipantMilestonesClient

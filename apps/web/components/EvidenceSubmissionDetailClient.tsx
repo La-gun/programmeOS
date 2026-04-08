@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import AiSuggestionsPanel from '@/components/AiSuggestionsPanel'
 
 type SubmissionPayload = {
   id: string
@@ -196,6 +197,8 @@ export default function EvidenceSubmissionDetailClient({ submissionId }: { submi
           </div>
         )}
       </div>
+
+      <AiSuggestionsPanel scope={{ mode: 'evidence', submissionId }} />
     </div>
   )
 }

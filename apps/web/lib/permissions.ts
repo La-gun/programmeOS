@@ -23,7 +23,12 @@ export function canViewAuditLog(role: Role): boolean {
   return role === 'ADMIN' || role === 'MANAGER'
 }
 
-/** Evidence review and reviewer assignment */
+/** Financial payouts: restricted to programme owners */
+export function canManagePayouts(role: Role): boolean {
+  return PROGRAMME_MANAGER_ROLES.includes(role)
+}
+
+/** Evidence review, reviewer assignment, and integrity case queue */
 export function canReviewEvidence(role: Role): boolean {
   return COHORT_MANAGER_ROLES.includes(role)
 }

@@ -7,6 +7,7 @@ import {
 import type { Prisma } from '@prisma/client'
 import { prisma } from '../client'
 import { createAuditEvent } from './auditService'
+import { evaluateIntegrityAfterEvidenceSubmit } from './integrityService'
 import {
   assertUserCanReview,
   getParticipantMilestoneForTenant
@@ -267,13 +268,21 @@ export async function submitEvidence(
     throw new Error('Attach at least one document before submitting.')
   }
 
-  const updated = await prisma.evidenceSubmission.update({
-    where: { id },
-    data: {
-      status: SubmissionStatus.SUBMITTED,
-      submittedAt: new Date()
-    },
-    include: submissionInclude
+  const updated = await prisma.$transaction(async (tx) => {
+    const row = await tx.evidenceSubmission.update({
+      where: { id },
+      data: {
+        status: SubmissionStatus.SUBMITTED,
+        submittedAt: new Date()
+      },
+      include: submissionInclude
+    })
+    await evaluateIntegrityAfterEvidenceSubmit(tx, row, context.tenantId, {
+      userId: context.actingUserId,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent
+    })
+    return row
   })
 
   await createAuditEvent({

@@ -1,5 +1,8 @@
+import type { PrismaClient } from '@prisma/client'
 import { AuditAction } from '@prisma/client'
 import { prisma } from '../client'
+
+type AuditDelegate = Pick<PrismaClient, 'auditEvent'>
 
 export interface AuditEventContext {
   tenantId: string
@@ -12,9 +15,9 @@ export interface AuditEventContext {
   userAgent?: string
 }
 
-export async function createAuditEvent(context: AuditEventContext) {
+export async function createAuditEvent(context: AuditEventContext, db: AuditDelegate = prisma) {
   const { tenantId, userId, action, entityType, entityId, details, ipAddress, userAgent } = context
-  return prisma.auditEvent.create({
+  return db.auditEvent.create({
     data: {
       tenantId,
       userId,

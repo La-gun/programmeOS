@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import AiSuggestionsPanel from '@/components/AiSuggestionsPanel'
 
 type ReviewPayload = {
   id: string
@@ -226,6 +227,8 @@ export default function ReviewDetailClient({
             : `This assignment is ${data.status.replace(/_/g, ' ').toLowerCase()}.`}
         </p>
       )}
+
+      <AiSuggestionsPanel scope={{ mode: 'review', reviewId }} />
     </div>
   )
 }

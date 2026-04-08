@@ -249,3 +249,44 @@ export async function persistOutboundChannelMessage(
   return { conversationId: conversation.id, messageEventId: message.id }
 }
 
+/** Internal programme notice (e.g. payout status); not sent to external channels. */
+export async function postInternalSystemNotice(input: {
+  tenantId: string
+  participantId: string
+  content: string
+  actorUserId?: string
+}): Promise<{ conversationId: string; messageEventId: string }> {
+  const conversation = await getOrCreateChannelConversation(
+    input.tenantId,
+    input.participantId,
+    MessagingChannel.INTERNAL
+  )
+
+  let senderId = input.actorUserId ?? null
+  if (!senderId) {
+    senderId = await getTenantBotUserId(input.tenantId)
+  }
+  if (!senderId) {
+    throw new Error('No sender user: pass actorUserId or ensure an ADMIN exists in the tenant')
+  }
+
+  const message = await prisma.messageEvent.create({
+    data: {
+      conversationId: conversation.id,
+      senderId,
+      direction: MessageDirection.OUTBOUND,
+      providerMessageId: null,
+      type: MessageType.SYSTEM,
+      content: input.content.trim(),
+      metadata: { kind: 'internal_system_notice' }
+    }
+  })
+
+  await prisma.conversation.update({
+    where: { id: conversation.id },
+    data: { updatedAt: new Date() }
+  })
+
+  return { conversationId: conversation.id, messageEventId: message.id }
+}
+
