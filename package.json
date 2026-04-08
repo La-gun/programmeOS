@@ -1,0 +1,20 @@
+{
+  "name": "programmeos",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "clean": "turbo clean",
+    "db:seed": "cd packages/prisma && pnpm db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  }
+}

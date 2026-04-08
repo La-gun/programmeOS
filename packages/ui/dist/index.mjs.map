@@ -1,0 +1,1 @@
+{"version":3,"sources":["../lib/index.tsx"],"sourcesContent":["import React from 'react'\n\n// UI components library\nexport const Button: React.FC = () => {\n  return <button>Button</button>\n}"],"mappings":";AAAA,OAAO,WAAW;AAGX,IAAM,SAAmB,MAAM;AACpC,SAAO,oCAAC,gBAAO,QAAM;AACvB;","names":[]}

@@ -1,0 +1,29 @@
+{
+  "name": "@programmeos/ui",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./lib/index.tsx",
+  "types": "./lib/index.tsx",
+  "exports": {
+    ".": "./lib/index.tsx"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@programmeos/config": "workspace:*",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0"
+  }
+}

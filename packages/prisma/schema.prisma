@@ -1,0 +1,376 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  ADMIN
+  MANAGER
+  FACILITATOR
+  PARTICIPANT
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  DATA_PROCESSING
+  MARKETING
+  RESEARCH
+}
+
+enum MilestoneStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  OVERDUE
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  REQUIRES_CHANGES
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  SYSTEM
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  SUBMIT_EVIDENCE
+  REVIEW_EVIDENCE
+}
+
+// NextAuth.js models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+// Models
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  users         User[]
+  memberships   Membership[]
+  programmes    Programme[]
+  documents     Document[]
+  conversations Conversation[]
+  auditEvents   AuditEvent[]
+
+  @@map("tenants")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  tenantId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberships     Membership[]
+  participants    Participant[]
+  evidenceReviews EvidenceReview[]
+  messageEvents   MessageEvent[]
+  auditEvents     AuditEvent[]
+  accounts        Account[]
+  sessions        Session[]
+
+  @@map("users")
+}
+
+model Membership {
+  id       String @id @default(cuid())
+  userId   String
+  tenantId String
+  role     Role   @default(PARTICIPANT)
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId])
+  @@map("memberships")
+}
+
+model Programme {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  tenantId    String
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant             Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cohorts            Cohort[]
+  milestoneTemplates MilestoneTemplate[]
+
+  @@map("programmes")
+}
+
+model Cohort {
+  id          String   @id @default(cuid())
+  name        String
+  programmeId String
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  programme   Programme     @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  participants Participant[]
+
+  @@map("cohorts")
+}
+
+model MilestoneTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  programmeId String
+  order       Int
+  dueDays     Int?     // Days from cohort start
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  programme          Programme            @relation(fields: [programmeId], references: [id], onDelete: Cascade)
+  participantMilestones ParticipantMilestone[]
+
+  @@map("milestone_templates")
+}
+
+model Participant {
+  id        String   @id @default(cuid())
+  userId    String
+  cohortId  String
+  enrolledAt DateTime @default(now())
+  status    String   @default("active")
+
+  // Relations
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cohort            Cohort              @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  profile           ParticipantProfile?
+  consentRecords    ConsentRecord[]
+  participantMilestones ParticipantMilestone[]
+
+  @@unique([userId, cohortId])
+  @@map("participants")
+}
+
+model ParticipantProfile {
+  id            String  @id @default(cuid())
+  participantId String  @unique
+  bio           String?
+  goals         String?
+  skills        String?
+  experience    String?
+
+  // Relations
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@map("participant_profiles")
+}
+
+model ConsentRecord {
+  id            String       @id @default(cuid())
+  participantId String
+  type          ConsentType
+  consented     Boolean      @default(false)
+  consentedAt   DateTime?
+  version       String
+  ipAddress     String?
+  userAgent     String?
+
+  // Relations
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, type, version])
+  @@map("consent_records")
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  size        Int?
+  mimeType    String?
+  tenantId    String
+  uploadedById String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploadedBy User?   @relation(fields: [uploadedById], references: [id])
+
+  @@map("documents")
+}
+
+model ParticipantMilestone {
+  id                   String          @id @default(cuid())
+  participantId        String
+  milestoneTemplateId  String
+  status               MilestoneStatus @default(NOT_STARTED)
+  startedAt            DateTime?
+  completedAt          DateTime?
+  dueDate              DateTime?
+  notes                String?
+
+  // Relations
+  participant       Participant         @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  milestoneTemplate MilestoneTemplate   @relation(fields: [milestoneTemplateId], references: [id], onDelete: Cascade)
+  evidenceSubmissions EvidenceSubmission[]
+
+  @@unique([participantId, milestoneTemplateId])
+  @@map("participant_milestones")
+}
+
+model EvidenceSubmission {
+  id                   String           @id @default(cuid())
+  participantMilestoneId String
+  title                String
+  description          String?
+  status               SubmissionStatus @default(DRAFT)
+  submittedAt          DateTime?
+  documents            String[]         // Array of document IDs
+
+  // Relations
+  participantMilestone ParticipantMilestone @relation(fields: [participantMilestoneId], references: [id], onDelete: Cascade)
+  reviews              EvidenceReview[]
+
+  @@map("evidence_submissions")
+}
+
+model EvidenceReview {
+  id                   String        @id @default(cuid())
+  evidenceSubmissionId String
+  reviewerId           String
+  status               ReviewStatus  @default(PENDING)
+  feedback             String?
+  reviewedAt           DateTime?
+  score                Int?
+
+  // Relations
+  evidenceSubmission EvidenceSubmission @relation(fields: [evidenceSubmissionId], references: [id], onDelete: Cascade)
+  reviewer           User               @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@map("evidence_reviews")
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  tenantId  String
+  title     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messageEvents MessageEvent[]
+
+  @@map("conversations")
+}
+
+model MessageEvent {
+  id             String      @id @default(cuid())
+  conversationId String
+  senderId       String
+  type           MessageType @default(TEXT)
+  content        String
+  metadata       Json?       // For file attachments, etc.
+  sentAt         DateTime    @default(now())
+
+  // Relations
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@map("message_events")
+}
+
+model AuditEvent {
+  id        String      @id @default(cuid())
+  tenantId  String
+  userId    String?
+  action    AuditAction
+  entityType String      // e.g., "User", "Programme"
+  entityId  String
+  details   Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime    @default(now())
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id])
+
+  @@map("audit_events")
+}
