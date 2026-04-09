@@ -95,9 +95,13 @@ cd packages/prisma && pnpm db:migrate
 
 ## 📚 Documentation
 
-- [Architecture](ARCHITECTURE.md) - System design and component overview
-- [Implementation Plan](IMPLEMENTATION_PLAN.md) - Feature roadmap and milestones
-- [Engineering Guardrails](ENGINEERING_GUARDRAILS.md) - Development standards and practices
+- [Architecture](ARCHITECTURE.md) — web platform design (Next.js, Prisma, multi-tenancy)
+- [Implementation Plan](IMPLEMENTATION_PLAN.md) — roadmap and milestones
+- [Engineering Guardrails](ENGINEERING_GUARDRAILS.md) — TypeScript / Next.js standards
+- [Authorization matrix](docs/AUTHORIZATION_MATRIX.md) — roles and API capabilities
+- [Tenant isolation](docs/TENANT_ISOLATION.md) — scoping rules and optional RLS path
+- [Integrations](docs/INTEGRATIONS.md) — messaging, payments, AI maturity stages
+- [Operational metrics](docs/OPERATIONAL_METRICS.md) — SLOs and observability
 
 ## 🤝 Contributing
 

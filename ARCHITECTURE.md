@@ -1,284 +1,115 @@
 # Architecture
 
-**Version**: 1.0  
+**Version**: 2.0  
 **Last Updated**: April 2026  
-**Status**: 🔵 Design Phase
+**Status**: Active (web platform)
 
-## 🏗️ System Architecture Overview
+## System overview
 
-programmeOS is built with a layered, modular architecture that emphasizes separation of concerns, testability, and maintainability.
+ProgrammeOS is a **TypeScript monorepo**: a Next.js application backed by PostgreSQL (via Prisma), with shared packages for the database layer and UI.
 
 ```
-┌─────────────────────────────────────────────────┐
-│         User Applications & Services             │
-├─────────────────────────────────────────────────┤
-│         Standard Library & System APIs           │
-├─────────────────────────────────────────────────┤
-│    Kernel (Process/Memory/IPC Management)       │
-├─────────────────────────────────────────────────┤
-│    Drivers (Storage/Network/Devices)           │
-├─────────────────────────────────────────────────┤
-│    Hardware Abstraction Layer                   │
-├─────────────────────────────────────────────────┤
-│         Boot Loader & Firmware Interface        │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  Browser — React (App Router, Server/Client components) │
+├─────────────────────────────────────────────────────────┤
+│  apps/web — Route Handlers (REST), middleware, auth     │
+├─────────────────────────────────────────────────────────┤
+│  packages/prisma — schema, services, integrations       │
+├─────────────────────────────────────────────────────────┤
+│  PostgreSQL                                             │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 📚 Core Components
+## Packages
 
-### 1. Bootloader & HAL (Hardware Abstraction Layer)
-**Responsibility**: Initialize hardware and provide hardware-independent interface
-
-- Boot sequence management
-- CPU initialization
-- Memory detection and setup
-- Device enumeration
-- Platform-specific code isolation
-
-**Key Files**:
-```
-src/boot/
-src/hal/
-```
-
-**Interfaces**:
-```c
-// HAL initialization
-int hal_init(void);
-void hal_enable_interrupts(void);
-void hal_disable_interrupts(void);
-```
+| Package | Role |
+|---------|------|
+| `apps/web` | HTTP API, dashboard UI, NextAuth, messaging/payment/AI adapters at the edge of the app |
+| `packages/prisma` | Schema, migrations, `PrismaClient`, domain services (`lib/services/*`) |
+| `packages/ui` | Shared React components |
+| `packages/config` | Shared TypeScript / ESLint config |
 
 ---
 
-### 2. Kernel Core
-**Responsibility**: Process management, scheduling, memory management, IPC
+## Authentication and session
 
-#### 2.1 Process Management
-- Process creation and termination (`fork()`, `exec()`, `exit()`)
-- Process state management (ready, running, blocked, zombie)
-- Process descriptor and process table
-- Context switching
-
-**Location**: `src/kernel/process/`
-
-#### 2.2 Memory Management
-- Virtual memory management
-- Paging system
-- Physical memory allocator
-- Memory protection and isolation
-
-**Location**: `src/kernel/memory/`
-
-#### 2.3 Interrupt & Exception Handling
-- Interrupt routing and dispatch
-- Exception handlers
-- Signal delivery mechanism
-- Interrupt service routines (ISRs)
-
-**Location**: `src/kernel/interrupts/`
-
-#### 2.4 Inter-Process Communication (IPC)
-- Message passing
-- Pipes
-- Sockets
-- Shared memory management
-
-**Location**: `src/kernel/ipc/`
+- **NextAuth** with **Credentials** provider: email + bcrypt `passwordHash` on `User`.
+- **JWT sessions** (not database sessions). The Prisma adapter remains for account linking if OAuth is added later.
+- **`getAppSession()`** (`apps/web/lib/get-app-session.ts`) is the single server entry point: uses `getServerSession`, then optional **dev bypass** when `DISABLE_AUTH=true` and `NODE_ENV !== 'production'`.
+- Session carries **`tenantId`**, **`role`**, and tenant summary for UI.
 
 ---
 
-### 3. File System
-**Responsibility**: Persistent storage abstraction and file operations
+## Authorization
 
-- Virtual File System (VFS) layer
-- File system implementations (ext4, FAT32, etc.)
-- File descriptor management
-- Directory operations
-- File locking and synchronization
+- **Roles**: `ADMIN`, `MANAGER`, `FACILITATOR`, `PARTICIPANT` (Prisma enum).
+- **Route Handlers** call helpers in `apps/web/lib/api-auth.ts` (`requireProgrammeManager`, `requireSession`, etc.).
+- **Capability logic** lives in `apps/web/lib/permissions.ts`.
+- **Canonical matrix**: [docs/AUTHORIZATION_MATRIX.md](docs/AUTHORIZATION_MATRIX.md). New routes must update the matrix and add tests where practical.
 
-**Location**: `src/fs/`
+---
 
-**VFS Interface**:
-```c
-struct inode *vfs_open(const char *path, int flags);
-int vfs_read(struct file *f, void *buf, size_t count);
-int vfs_write(struct file *f, const void *buf, size_t count);
+## Multi-tenancy
+
+- Each `User` belongs to one **`Tenant`**. Programme data is scoped by `tenantId` on aggregate roots (e.g. `Programme`, `Document`) or via relations (e.g. `Participant` → `Cohort` → `Programme` → `tenantId`).
+- API handlers pass **`session.user.tenantId`** into service functions; services must not trust client-supplied tenant ids for authorization.
+- **Defense in depth**: application-layer scoping is required today; optional **PostgreSQL RLS** is described in [docs/TENANT_ISOLATION.md](docs/TENANT_ISOLATION.md).
+- Reusable filters: `packages/prisma/lib/tenant-scope.ts`.
+
+---
+
+## Domain services
+
+Business logic is concentrated under **`packages/prisma/lib/services/`** (evidence, payouts, integrity, participants, etc.) to keep Route Handlers thin. Services accept **`tenantId`** (or derive it via joins) for tenant-scoped reads and writes.
+
+---
+
+## Integrations
+
+- **Messaging**: WhatsApp Cloud and mock provider; idempotency helpers under `apps/web/lib/messaging/`.
+- **Payments**: Provider interface with mock implementation (`packages/prisma/lib/payments/`).
+- **AI**: Text provider interface with mock and optional OpenAI adapter (`packages/prisma/lib/ai/`).
+- Stages and exit criteria: [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md).
+
+---
+
+## Data flow (example)
+
+```
+Dashboard → fetch('/api/programmes') 
+  → requireProgrammeManager() 
+  → getProgrammeList(session.user.tenantId)
+  → Prisma (tenant-scoped query)
 ```
 
 ---
 
-### 4. Device Drivers
-**Responsibility**: Interface with hardware devices
+## Security notes
 
-- Block devices (storage)
-- Character devices (terminals, random)
-- Network devices
-- Device manager and hot-plugging
-- Driver abstraction framework
-
-**Location**: `src/drivers/`
+- **`DISABLE_AUTH`**: blocked in production (`apps/web/lib/auth-disabled.ts`); never enable in deployed environments.
+- **Uploads and webhooks**: validate size, type, and signatures; treat provider callbacks as untrusted input.
+- **AI output**: stored as suggestions only; never authoritative for compliance decisions without human review.
 
 ---
 
-### 5. System Call Interface
-**Responsibility**: User-to-kernel boundary
+## Testing strategy
 
-- All user application interactions go through syscalls
-- Syscall dispatcher
-- Argument validation and security checks
-- Syscall number mapping
-
-**Location**: `src/kernel/syscall/`
+- **Unit**: `permissions`, Zod schemas, pure helpers (Jest).
+- **Integration**: API + database (future expansion; use dedicated test DB and transactions or containers).
+- **CI**: lint, `prisma generate`, test, `next build` with safe CI env vars.
 
 ---
 
-## 🔄 Data Flow
+## Operational metrics
 
-### Process Creation Flow
-```
-User Application
-    │
-    ├─→ fork() syscall
-    │
-    ├─→ Kernel: sys_fork()
-    │   ├─→ Validate caller
-    │   ├─→ Allocate process descriptor
-    │   ├─→ Copy memory space
-    │   ├─→ Add to process table
-    │   └─→ Schedule new process
-    │
-    └─→ Returns: Parent gets PID, Child gets 0
-```
-
-### File Access Flow
-```
-User Application: read(fd, buf, count)
-    │
-    ├─→ sys_read() syscall
-    │
-    ├─→ Kernel: File Descriptor Table
-    │   ├─→ Lookup fd → file structure
-    │   ├─→ VFS: f_op->read()
-    │   ├─→ File System: fs_read()
-    │   ├─→ Drivers: block_read()
-    │   └─→ HAL: hardware access
-    │
-    └─→ Returns: bytes_read or error
-```
+Product-level SLOs and dashboards are defined in [docs/OPERATIONAL_METRICS.md](docs/OPERATIONAL_METRICS.md).
 
 ---
 
-## 🧩 Module Interfaces
+## Related documents
 
-### Process Module API
-```c
-/**
- * Create a new process by forking current process
- * @return: Parent gets PID of child, child gets 0
- */
-pid_t fork(void);
-
-/**
- * Replace process image with new program
- * @name: Program name to execute
- * @argv: Argument vector
- * @return: Never returns on success, -1 on error
- */
-int execv(const char *name, char *const argv[]);
-
-/**
- * Terminate current process
- * @code: Exit code
- */
-void exit(int code);
-```
-
-### Memory Module API
-```c
-/**
- * Allocate virtual memory region
- * @addr: Requested address (0 = kernel chooses)
- * @len: Size in bytes
- * @flags: MAP_SHARED, MAP_PRIVATE, etc.
- * @return: Starting address or NULL on error
- */
-void *mmap(void *addr, size_t len, int flags);
-
-/**
- * Free virtual memory region
- * @addr: Starting address
- * @len: Size in bytes
- * @return: 0 on success, -1 on error
- */
-int munmap(void *addr, size_t len);
-```
-
-### File System API
-```c
-/**
- * Open a file
- * @path: File path
- * @flags: O_RDONLY, O_WRONLY, O_CREAT, etc.
- * @mode: File permissions (if creating)
- * @return: File descriptor or -1 on error
- */
-int open(const char *path, int flags, int mode);
-
-/**
- * Read from file
- * @fd: File descriptor
- * @buf: Buffer to read into
- * @count: Number of bytes to read
- * @return: Bytes read or -1 on error
- */
-ssize_t read(int fd, void *buf, size_t count);
-```
-
----
-
-## 🔒 Security & Isolation
-
-- **Privilege Levels**: User mode vs. Kernel mode separation
-- **Memory Protection**: Virtual memory prevents cross-process access
-- **Capability Model**: Minimum privilege enforcement
-- **Input Validation**: All syscall arguments validated
-- **Resource Limits**: Per-process quotas on memory, file handles, etc.
-
----
-
-## ⚡ Performance Considerations
-
-- **Scheduling**: Multi-level feedback queue scheduler
-- **Memory**: Lazy allocation, copy-on-write, page replacement
-- **I/O**: Asynchronous operations, buffering, caching
-- **Locking**: Fine-grained locks, lock-free data structures where possible
-
----
-
-## 🧪 Testing Strategy
-
-- **Unit Tests**: Per-module functionality
-- **Integration Tests**: Multi-component interaction
-- **System Tests**: Full OS behavior
-- **Performance Tests**: Benchmarking and profiling
-- **Stress Tests**: Edge cases and resource exhaustion
-
----
-
-## 📈 Scalability
-
-- **Modular design** allows easy addition of new subsystems
-- **Driver framework** enables support for new hardware
-- **VFS abstraction** supports multiple file systems
-- **Clean interfaces** between layers facilitate parallel development
-
----
-
-## 🔗 Related Documents
-
-- [Implementation Plan](IMPLEMENTATION_PLAN.md) - Timeline and milestones
-- [Engineering Guardrails](ENGINEERING_GUARDRAILS.md) - Development practices
-- [Copilot Tasks](COPILOT_TASKS.md) - Development guidelines
+- [Implementation plan](IMPLEMENTATION_PLAN.md)
+- [Engineering guardrails](ENGINEERING_GUARDRAILS.md)
+- [Copilot tasks](COPILOT_TASKS.md)

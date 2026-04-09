@@ -1,6 +1,13 @@
+import { config } from 'dotenv'
+import { resolve } from 'node:path'
 import { MessagingChannel, PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import { ensureParticipantMilestones } from './lib/services/participantMilestoneService'
+
+// Load same DB URL as the web app when seeding from packages/prisma (pnpm db:seed).
+config({ path: resolve(process.cwd(), '.env') })
+config({ path: resolve(process.cwd(), '../../apps/web/.env') })
+config({ path: resolve(process.cwd(), '../../apps/web/.env.local') })
 
 const prisma = new PrismaClient()
 

@@ -4,9 +4,10 @@
 
    ▲ Next.js 14.1.0
    - Environments: .env.local
+   - Experiments (use at your own risk):
+     · instrumentationHook
 
    Creating an optimized production build ...
-Compiler edge-server unexpectedly exited with code: null and signal: SIGTERM
  ✓ Compiled successfully
    Linting and checking validity of types ...
    Collecting page data ...
@@ -82,14 +83,14 @@ Route (app)                                               Size     First Load JS
 ├ λ /dashboard/reviews/[reviewId]                         3.54 kB        94.6 kB
 ├ λ /dashboard/settings                                   865 B          85.1 kB
 ├ λ /dashboard/whatsapp-test                              1.27 kB        85.5 kB
-└ λ /login                                                1.69 kB        95.7 kB
+└ λ /login                                                2.13 kB        96.2 kB
 + First Load JS shared by all                             84.3 kB
   ├ chunks/584-7dc18147a95c21ef.js                        28.9 kB
   ├ chunks/95c7ac37-1604750b50ecec1a.js                   53.4 kB
   └ other shared chunks (total)                           1.98 kB
 
 
-ƒ Middleware                                              75.1 kB
+ƒ Middleware                                              75.4 kB
 
 λ  (Dynamic)  server-rendered on demand using Node.js
 

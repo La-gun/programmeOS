@@ -8,7 +8,7 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
-    "test": "jest --passWithNoTests"
+    "test": "jest --config jest.config.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.0.18",

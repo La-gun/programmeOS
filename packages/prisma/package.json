@@ -8,12 +8,13 @@
     ".": "./lib/index.ts"
   },
   "scripts": {
+    "build": "prisma generate && node -e \"require('fs').mkdirSync('.build',{recursive:true});require('fs').writeFileSync('.build/stamp.txt',new Date().toISOString())\"",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx seed.ts",
     "lint": "eslint . --ext .ts,.tsx",
-    "test": "jest --passWithNoTests"
+    "test": "prisma generate && jest --config jest.config.cjs"
   },
   "dependencies": {
     "@prisma/client": "^5.10.0",
@@ -28,9 +29,11 @@
     "@programmeos/config": "workspace:*",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.0.0",
+    "dotenv": "^17.4.1",
     "eslint": "^8.57.0",
     "jest": "^29.7.0",
-    "typescript": "^5.3.0",
-    "tsx": "^4.7.0"
+    "ts-jest": "^29.2.5",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
   }
 }

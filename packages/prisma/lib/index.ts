@@ -1,4 +1,5 @@
 export { prisma } from './client'
+export { tenantWhere } from './tenant-scope'
 export * from './services'
 export { getPaymentProvider, createMockPaymentProvider } from './payments/provider'
 export type {

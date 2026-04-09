@@ -1,5 +1,20 @@
 
 > @programmeos/prisma@0.0.0 test C:\Users\oluso\OneDrive\Desktop\POO\programmeOS\packages\prisma
-> jest --passWithNoTests
+> prisma generate && jest --config jest.config.cjs
 
-No tests found, exiting with code 0
+Prisma schema loaded from schema.prisma
+
+✔ Generated Prisma Client (v5.22.0) to .\..\..\node_modules\.pnpm\@prisma+client@5.22.0_prisma@5.22.0\node_modules\@prisma\client in 287ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Interested in query caching in just a few lines of code? Try Accelerate today! https://pris.ly/tip-3-accelerate
+
+PASS lib/__tests__/tenant-scope.test.ts
+PASS lib/__tests__/schemas.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        0.773 s, estimated 1 s
+Ran all test suites.

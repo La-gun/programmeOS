@@ -1,5 +1,20 @@
 
 > @programmeos/web@0.1.0 test C:\Users\oluso\OneDrive\Desktop\POO\programmeOS\apps\web
-> jest --passWithNoTests
+> jest --config jest.config.js
 
-No tests found, exiting with code 0
+PASS lib/__tests__/permissions.test.ts
+  permissions
+    √ restricts programme management to admin and manager (2 ms)
+    √ allows facilitators to manage cohorts and participants
+    √ restricts audit log to admin and manager
+    √ restricts payouts to admin and manager (1 ms)
+    √ allows cohort managers to review evidence
+    √ lets participants access only their own participant user id
+    √ lets staff access any participant record (1 ms)
+    √ covers every role for programme management expectation
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        0.393 s, estimated 1 s
+Ran all test suites.

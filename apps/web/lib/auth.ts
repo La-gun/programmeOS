@@ -20,8 +20,12 @@ export const authOptions: NextAuthOptions = {
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        const email = credentials.email.trim().toLowerCase()
+
+        const user = await prisma.user.findFirst({
+          where: {
+            email: { equals: email, mode: 'insensitive' }
+          },
           include: { tenant: true }
         })
 

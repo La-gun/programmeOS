@@ -1,5 +1,13 @@
 
 > @programmeos/ui@0.0.0 test C:\Users\oluso\OneDrive\Desktop\POO\programmeOS\packages\ui
-> jest --passWithNoTests
+> jest --config jest.config.cjs
 
-No tests found, exiting with code 0
+PASS lib/__tests__/package-smoke.test.ts
+  @programmeos/ui
+    √ runs tests in CI (3 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       1 passed, 1 total
+Snapshots:   0 total
+Time:        1.056 s
+Ran all test suites.
